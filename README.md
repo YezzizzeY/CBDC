@@ -8,23 +8,13 @@
 
 #### 1.1 Golang
 
-
-
 #### 1.2 Git
-
-
 
 #### 1.3 cURL
 
-
-
 #### 1.4 Docker
 
-
-
 #### 1.5 Nodejs
-
-
 
 #### 1.6 npm
 
@@ -240,99 +230,6 @@ root@ubuntu:/home/yezzi/Desktop/
 
 
 
-#### 3.4 Writing chaincodes
-
-A simplified smart contract to achieve the functions of CDBC
-
-```javascript
-/*
- * SPDX-License-Identifier: Apache-2.0
- */
-// Deterministic JSON.stringify()
-import {Context, Contract, Info, Returns, Transaction} from 'fabric-contract-api';
-import stringify from 'json-stringify-deterministic';
-import sortKeysRecursive from 'sort-keys-recursive';
-import {Asset} from './asset';
-import { Context, Contract, Info, Returns, Transaction } from 'fabric-contract-api';
-
-interface LogisticsInfo {
-    ID: string;
-    Status: string; // 如 "Delivered", "In Transit"
-    // 其他相关字段
-}
-
-interface CBDC_Transaction {
-    ID: string;
-    Amount: number;
-    SellerCBDCAddress: string;
-    // 其他相关字段
-}
-
-@Info({title: 'AssetTransfer', description: 'Smart contract for trading assets'})
-export class AssetTransferContract extends Contract {
-
-    @Transaction()
-    public async InitLedger(ctx: Context): Promise<void> {
-
-        const logistics: LogisticsInfo[] = [
-        ];
-        const cbdcTransactions: CBDC_Transaction[] = [
-        ];
-
-        for (const log of logistics) {
-            await ctx.stub.putState(log.ID, Buffer.from(JSON.stringify(log)));
-        }
-
-        for (const cbdc of cbdcTransactions) {
-            await ctx.stub.putState(cbdc.ID, Buffer.from(JSON.stringify(cbdc)));
-        }
-    }
-
-    // 注册CBDCAccount
-    @Transaction()
-    public async RegisterCBDCAccount(ctx: Context, accountId: string, accountDetails: string): Promise<void> {
-        // 实现账户注册逻辑
-    }
-
-    // 处理担保交易
-    @Transaction()
-    public async HandleEscrowTransaction(ctx: Context, transactionId: string, transactionDetails: string): Promise<void> {
-        // 处理担保交易逻辑
-    }
-
-    // 分账结算
-    @Transaction()
-    public async SettleAccounts(ctx: Context, logisticsId: string, settlementRules: string): Promise<void> {
-        // 实现分账结算逻辑
-    }
-
-    // 更新物流信息
-    @Transaction()
-    public async UpdateLogisticsInfo(ctx: Context, logisticsId: string, newInfo: string): Promise<void> {
-        // 实现更新物流信息逻辑
-    }
-
-    // 获取物流信息
-    @Transaction(false)
-    @Returns('string')
-    public async GetLogisticsInfo(ctx: Context, logisticsId: string): Promise<string> {
-        // 实现获取物流信息逻辑
-    }
-
-    // 检查资产是否存在
-    @Transaction(false)
-    @Returns('boolean')
-    public async AssetExists(ctx: Context, id: string): Promise<boolean> {
-        const assetJSON = await ctx.stub.getState(id);
-        return assetJSON && assetJSON.length > 0;
-    }
-
-}
-
-```
-
-
-
 
 
 #### 3.5 Installing chaincodes on the channel
@@ -347,11 +244,25 @@ In Fabric, smart contracts are deployed on the network in packages referred to a
 
 
 
-### 4 Interacting with hyperledger fabric testnet
+### 4 Test with CBDC Demo
 
 
 
-#### 4.1 Set up network again and create the channel
+#### 4.1 Get the CBDC github repo
+
+First, we need to get the CBDC sdk and CBDC smart contract using github:
+
+```bash
+git clone https://github.com/YezzizzeY/CBDC.git
+```
+
+
+
+#### 4.2 Add CBDC_transaction doc folder to fabric-samples
+
+
+
+#### 4.3 Setting basic network
 
 This command will deploy the Fabric test network with two peers, an ordering service, and three certificate authorities (Orderer, Org1, Org2). Instead of using the cryptogen tool, we bring up the test network using certificate authorities, hence the `-ca` flag. Additionally, the org admin user registration is bootstrapped when the certificate authority is started.
 
@@ -361,211 +272,713 @@ This command will deploy the Fabric test network with two peers, an ordering ser
 
 
 
-#### 4.2 Deploy the smart contract
-
-Deploy the chaincode package containing the smart contract by calling the `./network.sh` script with the chaincode name and language options.
+#### 4.4 Compile and deploy the CBDC smart contract
 
 ```bash
-./network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-typescript/ -ccl typescript
-```
-
-
-
-#### 4.3 Setting SDK and invocation
-
-A sample application developed using the Fabric Gateway client API for Node.
-
-Run the following command to install the dependencies and build the application. It may take some time to complete:
-
-
-
-```bash
-npm install
-```
-
-
-
-#### 4.4 Run the application using npm
-
-When we started the Fabric test network earlier in this tutorial, several identities were created using the Certificate Authorities. These include a user identity for each of the organizations. The application will use the credentials of one of these user identities to transact with the blockchain network.
-
-```bash
-npm start
+./network.sh deployCC -ccn testgo -ccp ../CBDC_transaction/CBDC_contract_go/ -ccl go
 ```
 
 
 
 #### 4.5 Integrate SDK into our application
 
-First we use the typescript sdk and then we use typescript functions to achieve the application of several users.
+go into application-gateway-go and run 
 
-```typescript
-import * as grpc from '@grpc/grpc-js';
-import { connect, Contract, Identity, Signer, signers } from '@hyperledger/fabric-gateway';
-import * as crypto from 'crypto';
-import { promises as fs } from 'fs';
-import * as path from 'path';
-import { TextDecoder } from 'util';
+```bash
+go run assetTransfer.go
+```
 
-const channelName = envOrDefault('CHANNEL_NAME', 'mychannel');
-const chaincodeName = envOrDefault('CHAINCODE_NAME', 'basic');
-const mspId = envOrDefault('MSP_ID', 'Org1MSP');
+the success output is:
 
-// Path to crypto materials.
-const cryptoPath = envOrDefault('CRYPTO_PATH', path.resolve(__dirname, '..', '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'org1.example.com'));
-const keyDirectoryPath = envOrDefault('KEY_DIRECTORY_PATH', path.resolve(cryptoPath, 'users', 'User1@org1.example.com', 'msp', 'keystore'));
-const certPath = envOrDefault('CERT_PATH', path.resolve(cryptoPath, 'users', 'User1@org1.example.com', 'msp', 'signcerts', 'cert.pem'));
-const tlsCertPath = envOrDefault('TLS_CERT_PATH', path.resolve(cryptoPath, 'peers', 'peer0.org1.example.com', 'tls', 'ca.crt'));
-const peerEndpoint = envOrDefault('PEER_ENDPOINT', 'localhost:7051');
-const peerHostAlias = envOrDefault('PEER_HOST_ALIAS', 'peer0.org1.example.com');
+```bash
+root@ubuntu:/home/yezzi/Desktop/CBDC/fabric-samples/CBDC_transaction/application-gateway-go# go run assetTransfer.go 
+connect to contract succeed:  &{0xc0001eba10 0xc000150ec0 mychannel testgo }
 
-const utf8Decoder = new TextDecoder();
+--> Submit Transaction: InitLedger, function creates the initial set of assets on the ledger 
+*** Transaction committed successfully
 
-async function main(): Promise<void> {
-    // Display input parameters
-    displayInputParameters();
+--> Evaluate Transaction: GetAllAssets, function returns all the current assets on the ledger
+Raw Evaluate Result: [{"appraisedValue":0,"id":"asset1707417670515","proposalTimeStamp":1622548800,"deliveryTimeStamp":0,"amount":1000,"buyer":"BuyerA","merchant":"MerchantA","buyerSig":"BuyerASignature","merchantSig":"","platformSig":"","partySig":"","paymentSuccess":false,"deliverSuccess":false,"buyerConfirmDeliverSig":"","tradeSuccess":false},{"appraisedValue":0,"id":"asset1707417728055","proposalTimeStamp":1622548800,"deliveryTimeStamp":0,"amount":1000,"buyer":"BuyerA","merchant":"MerchantA","buyerSig":"BuyerASignature","merchantSig":"","platformSig":"","partySig":"","paymentSuccess":false,"deliverSuccess":false,"buyerConfirmDeliverSig":"","tradeSuccess":false},{"appraisedValue":0,"id":"assetExampleID","proposalTimeStamp":1622548800,"deliveryTimeStamp":0,"amount":1000,"buyer":"BuyerA","merchant":"MerchantA","buyerSig":"BuyerASignature","merchantSig":"","platformSig":"","partySig":"","paymentSuccess":false,"deliverSuccess":false,"buyerConfirmDeliverSig":"","tradeSuccess":false},{"appraisedValue":0,"id":"init0","proposalTimeStamp":1622548800,"deliveryTimeStamp":0,"amount":1000,"buyer":"BuyerA","merchant":"MerchantA","buyerSig":"BuyerASignature","merchantSig":"","platformSig":"","partySig":"","paymentSuccess":false,"deliverSuccess":false,"buyerConfirmDeliverSig":"","tradeSuccess":false},{"appraisedValue":0,"id":"init1","proposalTimeStamp":1622548800,"deliveryTimeStamp":0,"amount":1000,"buyer":"BuyerB","merchant":"MerchantB","buyerSig":"BuyerASignature","merchantSig":"","platformSig":"","partySig":"","paymentSuccess":false,"deliverSuccess":false,"buyerConfirmDeliverSig":"","tradeSuccess":false},{"appraisedValue":0,"id":"init2","proposalTimeStamp":1622548800,"deliveryTimeStamp":0,"amount":1000,"buyer":"BuyerC","merchant":"MerchantC","buyerSig":"BuyerASignature","merchantSig":"","platformSig":"","partySig":"","paymentSuccess":false,"deliverSuccess":false,"buyerConfirmDeliverSig":"","tradeSuccess":false},{"appraisedValue":0,"id":"init3","proposalTimeStamp":1622548800,"deliveryTimeStamp":0,"amount":1000,"buyer":"BuyerD","merchant":"MerchantD","buyerSig":"BuyerASignature","merchantSig":"","platformSig":"","partySig":"","paymentSuccess":false,"deliverSuccess":false,"buyerConfirmDeliverSig":"","tradeSuccess":false}]
+*** Result:[
+  {
+    "appraisedValue": 0,
+    "id": "asset1707417670515",
+    "proposalTimeStamp": 1622548800,
+    "deliveryTimeStamp": 0,
+    "amount": 1000,
+    "buyer": "BuyerA",
+    "merchant": "MerchantA",
+    "buyerSig": "BuyerASignature",
+    "merchantSig": "",
+    "platformSig": "",
+    "partySig": "",
+    "paymentSuccess": false,
+    "deliverSuccess": false,
+    "buyerConfirmDeliverSig": "",
+    "tradeSuccess": false
+  },
+  {
+    "appraisedValue": 0,
+    "id": "asset1707417728055",
+    "proposalTimeStamp": 1622548800,
+    "deliveryTimeStamp": 0,
+    "amount": 1000,
+    "buyer": "BuyerA",
+    "merchant": "MerchantA",
+    "buyerSig": "BuyerASignature",
+    "merchantSig": "",
+    "platformSig": "",
+    "partySig": "",
+    "paymentSuccess": false,
+    "deliverSuccess": false,
+    "buyerConfirmDeliverSig": "",
+    "tradeSuccess": false
+  },
+  {
+    "appraisedValue": 0,
+    "id": "assetExampleID",
+    "proposalTimeStamp": 1622548800,
+    "deliveryTimeStamp": 0,
+    "amount": 1000,
+    "buyer": "BuyerA",
+    "merchant": "MerchantA",
+    "buyerSig": "BuyerASignature",
+    "merchantSig": "",
+    "platformSig": "",
+    "partySig": "",
+    "paymentSuccess": false,
+    "deliverSuccess": false,
+    "buyerConfirmDeliverSig": "",
+    "tradeSuccess": false
+  },
+  {
+    "appraisedValue": 0,
+    "id": "init0",
+    "proposalTimeStamp": 1622548800,
+    "deliveryTimeStamp": 0,
+    "amount": 1000,
+    "buyer": "BuyerA",
+    "merchant": "MerchantA",
+    "buyerSig": "BuyerASignature",
+    "merchantSig": "",
+    "platformSig": "",
+    "partySig": "",
+    "paymentSuccess": false,
+    "deliverSuccess": false,
+    "buyerConfirmDeliverSig": "",
+    "tradeSuccess": false
+  },
+  {
+    "appraisedValue": 0,
+    "id": "init1",
+    "proposalTimeStamp": 1622548800,
+    "deliveryTimeStamp": 0,
+    "amount": 1000,
+    "buyer": "BuyerB",
+    "merchant": "MerchantB",
+    "buyerSig": "BuyerASignature",
+    "merchantSig": "",
+    "platformSig": "",
+    "partySig": "",
+    "paymentSuccess": false,
+    "deliverSuccess": false,
+    "buyerConfirmDeliverSig": "",
+    "tradeSuccess": false
+  },
+  {
+    "appraisedValue": 0,
+    "id": "init2",
+    "proposalTimeStamp": 1622548800,
+    "deliveryTimeStamp": 0,
+    "amount": 1000,
+    "buyer": "BuyerC",
+    "merchant": "MerchantC",
+    "buyerSig": "BuyerASignature",
+    "merchantSig": "",
+    "platformSig": "",
+    "partySig": "",
+    "paymentSuccess": false,
+    "deliverSuccess": false,
+    "buyerConfirmDeliverSig": "",
+    "tradeSuccess": false
+  },
+  {
+    "appraisedValue": 0,
+    "id": "init3",
+    "proposalTimeStamp": 1622548800,
+    "deliveryTimeStamp": 0,
+    "amount": 1000,
+    "buyer": "BuyerD",
+    "merchant": "MerchantD",
+    "buyerSig": "BuyerASignature",
+    "merchantSig": "",
+    "platformSig": "",
+    "partySig": "",
+    "paymentSuccess": false,
+    "deliverSuccess": false,
+    "buyerConfirmDeliverSig": "",
+    "tradeSuccess": false
+  }
+]
 
-    // Set up the gRPC client connection
-    const client = await newGrpcConnection();
+--> Submit Transaction: CreateAsset, creates new asset with ID asset1707417780878, ProposalTimeStamp 1622548800, Amount 1000, Buyer BuyerA, BuyerSig BuyerASignature, and Merchant MerchantA
+*** Transaction committed successfully
 
-    // Connect to the gateway
-    const gateway = connect({
-        client,
-        identity: await newIdentity(),
-        signer: await newSigner(),
-        evaluateOptions: () => ({ deadline: Date.now() + 5000 }), // 5 seconds
-        endorseOptions: () => ({ deadline: Date.now() + 15000 }), // 15 seconds
-        submitOptions: () => ({ deadline: Date.now() + 5000 }), // 5 seconds
-        commitStatusOptions: () => ({ deadline: Date.now() + 60000 }), // 1 minute
-    });
-
-    try {
-        // Interact with the smart contract
-        const network = gateway.getNetwork(channelName);
-        const contract = network.getContract(chaincodeName);
-
-        // Example functions
-        await initLedger(contract);
-        await getAllAssets(contract);
-        await createAsset(contract, 'asset1', 'yellow', 5, 'Tom', 1300);
-        await transferAssetAsync(contract, 'asset1', 'Saptha');
-        await readAssetByID(contract, 'asset1');
-        await updateNonExistentAsset(contract, 'asset70');
-    } finally {
-        gateway.close();
-        client.close();
-    }
+--> Evaluate Transaction: ReadAsset, function returns asset attributes
+*** Result:{
+  "appraisedValue": 0,
+  "id": "asset1707417780878",
+  "proposalTimeStamp": 1622548800,
+  "deliveryTimeStamp": 0,
+  "amount": 1000,
+  "buyer": "BuyerA",
+  "merchant": "MerchantA",
+  "buyerSig": "BuyerASignature",
+  "merchantSig": "",
+  "platformSig": "",
+  "partySig": "",
+  "paymentSuccess": false,
+  "deliverSuccess": false,
+  "buyerConfirmDeliverSig": "",
+  "tradeSuccess": false
 }
 
-async function createLogisticsInfo(contract: Contract, logisticsId: string, logisticsDetails: string): Promise<void> {
-    console.log('\n--> Submit Transaction: CreateLogisticsInfo');
+--> Submit Transaction: UpdateAsset asset70, asset70 does not exist and should return an error
+*** Successfully caught the error:
+Endorse error for transaction fbf3ccdd3d70a2f7bf18f96078d335671fb2db42b15c7c4e08b3e8563fdbc076 with gRPC status Aborted: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info
+Error Details:
+- address: peer0.org1.example.com:7051, mspId: Org1MSP, message: chaincode response 500, Function UpdateAsset not found in contract SmartContract
 
-    await contract.submitTransaction('CreateLogisticsInfo', logisticsId, logisticsDetails);
+```
 
-    console.log('*** Transaction committed successfully');
+
+
+### 5 SDK and smart contract
+
+To help read the smart contract and CBDC sdk here, I've put the source code here
+
+#### 5.1 smart contract
+
+this is written by go, here is the core document, if you want to see the whole files, please refer to CBDC_transaction folder
+
+```go
+package chaincode
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/hyperledger/fabric-contract-api-go/contractapi"
+)
+
+// SmartContract provides functions for managing an Asset
+type SmartContract struct {
+	contractapi.Contract
 }
 
-async function createCBDC_Transaction(contract: Contract, transactionId: string, transactionDetails: string): Promise<void> {
-    console.log('\n--> Submit Transaction: CreateCBDC_Transaction');
-
-    await contract.submitTransaction('CreateCBDC_Transaction', transactionId, transactionDetails);
-
-    console.log('*** Transaction committed successfully');
-}
-
-async function getLogisticsInfo(contract: Contract, logisticsId: string): Promise<void> {
-    console.log(`\n--> Evaluate Transaction: GetLogisticsInfo, function returns the logistics info`);
-
-    const resultBytes = await contract.evaluateTransaction('GetLogisticsInfo', logisticsId);
-
-    console.log('*** Result:', utf8Decoder.decode(resultBytes));
-}
-
-async function getCBDC_TransactionInfo(contract: Contract, transactionId: string): Promise<void> {
-    console.log(`\n--> Evaluate Transaction: GetCBDC_TransactionInfo, function returns the CBDC transaction info`);
-
-    const resultBytes = await contract.evaluateTransaction('GetCBDC_TransactionInfo', transactionId);
-
-    console.log('*** Result:', utf8Decoder.decode(resultBytes));
-}
-
-
-async function createLogisticsInfo(contract: Contract, logisticsId: string, logisticsDetails: string): Promise<void> {
-    console.log('\n--> Submit Transaction: CreateLogisticsInfo');
-
-    await contract.submitTransaction('CreateLogisticsInfo', logisticsId, logisticsDetails);
-
-    console.log('*** Transaction committed successfully');
-}
-
-async function createCBDC_Transaction(contract: Contract, transactionId: string, transactionDetails: string): Promise<void> {
-    console.log('\n--> Submit Transaction: CreateCBDC_Transaction');
-
-    await contract.submitTransaction('CreateCBDC_Transaction', transactionId, transactionDetails);
-
-    console.log('*** Transaction committed successfully');
-}
-
-async function getLogisticsInfo(contract: Contract, logisticsId: string): Promise<void> {
-    console.log(`\n--> Evaluate Transaction: GetLogisticsInfo, function returns the logistics info`);
-
-    const resultBytes = await contract.evaluateTransaction('GetLogisticsInfo', logisticsId);
-
-    console.log('*** Result:', utf8Decoder.decode(resultBytes));
-}
-
-async function getCBDC_TransactionInfo(contract: Contract, transactionId: string): Promise<void> {
-    console.log(`\n--> Evaluate Transaction: GetCBDC_TransactionInfo, function returns the CBDC transaction info`);
-
-    const resultBytes = await contract.evaluateTransaction('GetCBDC_TransactionInfo', transactionId);
-
-    console.log('*** Result:', utf8Decoder.decode(resultBytes));
+// Asset describes basic details of what makes up a simple asset
+// Insert struct field in alphabetic order => to achieve determinism across languages
+// golang keeps the order when marshal to json but doesn't order automatically
+type Asset struct {
+	AppraisedValue         int    `json:"appraisedValue"`
+	ID                     string `json:"id"`
+	ProposalTimeStamp      int64  `json:"proposalTimeStamp"`
+	DeliveryTimeStamp      int64  `json:"deliveryTimeStamp"`
+	Amount                 int    `json:"amount"`
+	Buyer                  string `json:"buyer"`
+	Merchant               string `json:"merchant"`
+	BuyerSig               string `json:"buyerSig"`
+	MerchantSig            string `json:"merchantSig"`
+	PlatformSig            string `json:"platformSig"`
+	PartySig               string `json:"partySig"`
+	PaymentSuccess         bool   `json:"paymentSuccess"`
+	DeliverSuccess         bool   `json:"deliverSuccess"`
+	BuyerConfirmDeliverSig string `json:"buyerConfirmDeliverSig"`
+	TradeSuccess           bool   `json:"tradeSuccess"`
 }
 
 
-async function newGrpcConnection(): Promise<grpc.Client> {
-    const tlsRootCert = await fs.readFile(tlsCertPath);
-    const tlsCredentials = grpc.credentials.createSsl(tlsRootCert);
-    return new grpc.Client(peerEndpoint, tlsCredentials, {
-        'grpc.ssl_target_name_override': peerHostAlias,
-    });
+// InitLedger adds a base set of assets to the ledger
+func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
+	assets := []Asset{
+		{
+			ID:                "init0",
+			ProposalTimeStamp: 1622548800, // 示例时间戳
+			Amount:            1000,
+			Buyer:             "BuyerA",
+			BuyerSig:          "BuyerASignature",
+			Merchant:          "MerchantA",
+		},
+		{
+			ID:                "init1",
+			ProposalTimeStamp: 1622548800, // 示例时间戳
+			Amount:            1000,
+			Buyer:             "BuyerB",
+			BuyerSig:          "BuyerASignature",
+			Merchant:          "MerchantB",
+		},
+		{
+			ID:                "init2",
+			ProposalTimeStamp: 1622548800, // 示例时间戳
+			Amount:            1000,
+			Buyer:             "BuyerC",
+			BuyerSig:          "BuyerASignature",
+			Merchant:          "MerchantC",
+		},
+		{
+			ID:                "init3",
+			ProposalTimeStamp: 1622548800, // 示例时间戳
+			Amount:            1000,
+			Buyer:             "BuyerD",
+			BuyerSig:          "BuyerASignature",
+			Merchant:          "MerchantD",
+		},
+	}
+
+	for _, asset := range assets {
+		assetJSON, err := json.Marshal(asset)
+		if err != nil {
+			return err
+		}
+
+		err = ctx.GetStub().PutState(asset.ID, assetJSON)
+		if err != nil {
+			return fmt.Errorf("failed to put to world state. %v", err)
+		}
+	}
+
+	return nil
 }
 
-async function newIdentity(): Promise<Identity> {
-    const credentials = await fs.readFile(certPath);
-    return { mspId, credentials };
+// CreateAsset issues a new asset to the world state with given details.
+func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, id string, proposalTimeStamp int64, amount int, buyer string, buyerSig string, merchant string) error {
+	exists, err := s.AssetExists(ctx, id)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return fmt.Errorf("the asset %s already exists", id)
+	}
+
+	// 创建一个新的Asset实例，只包含必需的字段
+	asset := Asset{
+		ID:                id,
+		ProposalTimeStamp: proposalTimeStamp,
+		Amount:            amount,
+		Buyer:             buyer,
+		BuyerSig:          buyerSig,
+		Merchant:          merchant,
+		// 其他字段保留其零值或默认值
+	}
+	assetJSON, err := json.Marshal(asset)
+	if err != nil {
+		return err
+	}
+
+	return ctx.GetStub().PutState(id, assetJSON)
 }
 
-async function newSigner(): Promise<Signer> {
-    const files = await fs.readdir(keyDirectoryPath);
-    const keyPath = path.resolve(keyDirectoryPath, files[0]);
-    const privateKeyPem = await fs.readFile(keyPath);
-    const privateKey = crypto.createPrivateKey(privateKeyPem);
-    return signers.newPrivateKeySigner(privateKey);
+// ReadAsset returns the asset stored in the world state with given id.
+func (s *SmartContract) ReadAsset(ctx contractapi.TransactionContextInterface, id string) (*Asset, error) {
+	assetJSON, err := ctx.GetStub().GetState(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read from world state: %v", err)
+	}
+	if assetJSON == nil {
+		return nil, fmt.Errorf("the asset %s does not exist", id)
+	}
+
+	var asset Asset
+	err = json.Unmarshal(assetJSON, &asset)
+	if err != nil {
+		return nil, err
+	}
+
+	return &asset, nil
 }
 
-function envOrDefault(key: string, defaultValue: string): string {
-    return process.env[key] || defaultValue;
+// UpdateAssetDeliveryTimeStamp updates the DeliveryTimeStamp of an asset.
+func (s *SmartContract) UpdateAssetDeliveryTimeStamp(ctx contractapi.TransactionContextInterface, id string, newTimeStamp int64) error {
+	return s.updateAssetField(ctx, id, func(asset *Asset) {
+		asset.DeliveryTimeStamp = newTimeStamp
+	})
 }
 
-async function displayInputParameters(): Promise<void> {
-    console.log(`channelName:       ${channelName}`);
-    console.log(`chaincodeName:     ${chaincodeName}`);
-    console.log(`mspId:             ${mspId}`);
-    console.log(`cryptoPath:        ${cryptoPath}`);
-    console.log(`keyDirectoryPath:  ${keyDirectoryPath}`);
-    console.log(`certPath:          ${certPath}`);
-    console.log(`tlsCertPath:       ${tlsCertPath}`);
-    console.log(`peerEndpoint:      ${peerEndpoint}`);
-    console.log(`peerHostAlias:     ${peerHostAlias}`);
+// UpdateAssetPaymentSuccess updates the PaymentSuccess of an asset.
+func (s *SmartContract) UpdateAssetPaymentSuccess(ctx contractapi.TransactionContextInterface, id string, newStatus bool) error {
+	return s.updateAssetField(ctx, id, func(asset *Asset) {
+		asset.PaymentSuccess = newStatus
+	})
+}
+
+// UpdateAssetMerchantSig updates the MerchantSig of an asset.
+func (s *SmartContract) UpdateAssetMerchantSig(ctx contractapi.TransactionContextInterface, id string, newSig string) error {
+	return s.updateAssetField(ctx, id, func(asset *Asset) {
+		asset.MerchantSig = newSig
+	})
+}
+
+// updateAssetField is a helper function to update an asset field
+func (s *SmartContract) updateAssetField(ctx contractapi.TransactionContextInterface, id string, updateFunc func(*Asset)) error {
+	assetJSON, err := ctx.GetStub().GetState(id)
+	if err != nil {
+		return fmt.Errorf("failed to read from world state: %v", err)
+	}
+	if assetJSON == nil {
+		return fmt.Errorf("the asset %s does not exist", id)
+	}
+
+	var asset Asset
+	err = json.Unmarshal(assetJSON, &asset)
+	if err != nil {
+		return err
+	}
+
+	// Call the passed function to update the asset
+	updateFunc(&asset)
+
+	// Serialize the updated asset and write it back to the state
+	updatedAssetJSON, err := json.Marshal(asset)
+	if err != nil {
+		return err
+	}
+
+	return ctx.GetStub().PutState(id, updatedAssetJSON)
+}
+
+// DeleteAsset deletes a given asset from the world state.
+func (s *SmartContract) DeleteAsset(ctx contractapi.TransactionContextInterface, id string) error {
+	exists, err := s.AssetExists(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("the asset %s does not exist", id)
+	}
+
+	return ctx.GetStub().DelState(id)
+}
+
+// AssetExists returns true when asset with given ID exists in world state
+func (s *SmartContract) AssetExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
+	assetJSON, err := ctx.GetStub().GetState(id)
+	if err != nil {
+		return false, fmt.Errorf("failed to read from world state: %v", err)
+	}
+
+	return assetJSON != nil, nil
+}
+
+// GetAllAssets returns all assets found in world state
+func (s *SmartContract) GetAllAssets(ctx contractapi.TransactionContextInterface) ([]*Asset, error) {
+	// range query with empty string for startKey and endKey does an
+	// open-ended query of all assets in the chaincode namespace.
+	resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
+	if err != nil {
+		return nil, err
+	}
+	defer resultsIterator.Close()
+
+	var assets []*Asset
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		var asset Asset
+		err = json.Unmarshal(queryResponse.Value, &asset)
+		if err != nil {
+			return nil, err
+		}
+		assets = append(assets, &asset)
+	}
+
+	return assets, nil
+}
+
+```
+
+
+
+#### 5.2 SDK
+
+```go
+/*
+Copyright 2021 IBM All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+package main
+
+import (
+	"bytes"
+	"context"
+	"crypto/x509"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"path"
+	"time"
+
+	"github.com/hyperledger/fabric-gateway/pkg/client"
+	"github.com/hyperledger/fabric-gateway/pkg/identity"
+	"github.com/hyperledger/fabric-protos-go-apiv2/gateway"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
+)
+
+const (
+	mspID        = "Org1MSP"
+	cryptoPath   = "../../test-network/organizations/peerOrganizations/org1.example.com"
+	certPath     = cryptoPath + "/users/User1@org1.example.com/msp/signcerts/cert.pem"
+	keyPath      = cryptoPath + "/users/User1@org1.example.com/msp/keystore/"
+	tlsCertPath  = cryptoPath + "/peers/peer0.org1.example.com/tls/ca.crt"
+	peerEndpoint = "localhost:7051"
+	gatewayPeer  = "peer0.org1.example.com"
+)
+
+var now = time.Now()
+var assetId = fmt.Sprintf("asset%d", now.Unix()*1e3+int64(now.Nanosecond())/1e6)
+
+func main() {
+	// The gRPC client connection should be shared by all Gateway connections to this endpoint
+	clientConnection := newGrpcConnection()
+	defer clientConnection.Close()
+
+	id := newIdentity()
+	sign := newSign()
+
+	// Create a Gateway connection for a specific client identity
+	gw, err := client.Connect(
+		id,
+		client.WithSign(sign),
+		client.WithClientConnection(clientConnection),
+		// Default timeouts for different gRPC calls
+		client.WithEvaluateTimeout(5*time.Second),
+		client.WithEndorseTimeout(15*time.Second),
+		client.WithSubmitTimeout(5*time.Second),
+		client.WithCommitStatusTimeout(1*time.Minute),
+	)
+	if err != nil {
+		panic(err)
+	}
+	defer gw.Close()
+
+	// Override default values for chaincode and channel name as they may differ in testing contexts.
+	chaincodeName := "testgo"
+	//if ccname := os.Getenv("CHAINCODE_NAME"); ccname != "" {
+	//	chaincodeName = ccname
+	//}
+
+	channelName := "mychannel"
+	if cname := os.Getenv("CHANNEL_NAME"); cname != "" {
+		channelName = cname
+	}
+
+	network := gw.GetNetwork(channelName)
+	contract := network.GetContract(chaincodeName)
+	fmt.Println("connect to contract succeed: ", contract)
+
+	initLedger(contract)
+	getAllAssets(contract)
+	createAsset(contract)
+	readAssetByID(contract)
+	exampleErrorHandling(contract)
+}
+
+// newGrpcConnection creates a gRPC connection to the Gateway server.
+func newGrpcConnection() *grpc.ClientConn {
+	certificate, err := loadCertificate(tlsCertPath)
+	if err != nil {
+		panic(err)
+	}
+
+	certPool := x509.NewCertPool()
+	certPool.AddCert(certificate)
+	transportCredentials := credentials.NewClientTLSFromCert(certPool, gatewayPeer)
+
+	connection, err := grpc.Dial(peerEndpoint, grpc.WithTransportCredentials(transportCredentials))
+	if err != nil {
+		panic(fmt.Errorf("failed to create gRPC connection: %w", err))
+	}
+
+	return connection
+}
+
+// newIdentity creates a client identity for this Gateway connection using an X.509 certificate.
+func newIdentity() *identity.X509Identity {
+	certificate, err := loadCertificate(certPath)
+	if err != nil {
+		panic(err)
+	}
+
+	id, err := identity.NewX509Identity(mspID, certificate)
+	if err != nil {
+		panic(err)
+	}
+
+	return id
+}
+
+func loadCertificate(filename string) (*x509.Certificate, error) {
+	certificatePEM, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read certificate file: %w", err)
+	}
+	return identity.CertificateFromPEM(certificatePEM)
+}
+
+// newSign creates a function that generates a digital signature from a message digest using a private key.
+func newSign() identity.Sign {
+	files, err := os.ReadDir(keyPath)
+	if err != nil {
+		panic(fmt.Errorf("failed to read private key directory: %w", err))
+	}
+	privateKeyPEM, err := os.ReadFile(path.Join(keyPath, files[0].Name()))
+
+	if err != nil {
+		panic(fmt.Errorf("failed to read private key file: %w", err))
+	}
+
+	privateKey, err := identity.PrivateKeyFromPEM(privateKeyPEM)
+	if err != nil {
+		panic(err)
+	}
+
+	sign, err := identity.NewPrivateKeySign(privateKey)
+	if err != nil {
+		panic(err)
+	}
+
+	return sign
+}
+
+// This type of transaction would typically only be run once by an application the first time it was started after its
+// initial deployment. A new version of the chaincode deployed later would likely not need to run an "init" function.
+func initLedger(contract *client.Contract) {
+	fmt.Printf("\n--> Submit Transaction: InitLedger, function creates the initial set of assets on the ledger \n")
+	_, err := contract.SubmitTransaction("InitLedger")
+	if err != nil {
+		panic(fmt.Errorf("failed to submit transaction: %w", err))
+	}
+
+	fmt.Printf("*** Transaction committed successfully\n")
+}
+
+// Evaluate a transaction to query ledger state.
+func getAllAssets(contract *client.Contract) {
+	fmt.Println("\n--> Evaluate Transaction: GetAllAssets, function returns all the current assets on the ledger")
+
+	evaluateResult, err := contract.EvaluateTransaction("GetAllAssets")
+
+	// 打印原始返回的数据
+	fmt.Printf("Raw Evaluate Result: %s\n", string(evaluateResult))
+	if err != nil {
+		panic(fmt.Errorf("failed to evaluate transaction: %w", err))
+	}
+
+
+
+	// 继续您原有的处理逻辑
+	result := formatJSON(evaluateResult)
+	fmt.Printf("*** Result:%s\n", result)
 }
 
 
-main().catch(error => {
-    console.error('******** FAILED to run the application:', error);
-    process.exitCode = 1;
-});
+func createAsset(contract *client.Contract) {
+	// 定义创建资产所需的参数
+	assetId := assetId// 示例资产ID，实际应用中可能需要动态生成或从用户输入获取
+	proposalTimeStamp := "1622548800"
+	amount := "1000" // 示例金额
+	buyer := "BuyerA" // 买家示例
+	buyerSig := "BuyerASignature" // 买家签名示例
+	merchant := "MerchantA" // 商家示例
 
+	fmt.Printf("\n--> Submit Transaction: CreateAsset, creates new asset with ID %s, ProposalTimeStamp %s, Amount %s, Buyer %s, BuyerSig %s, and Merchant %s\n",
+		assetId, proposalTimeStamp, amount, buyer, buyerSig, merchant)
+
+	// 调用智能合约的CreateAsset函数
+	_, err := contract.SubmitTransaction("CreateAsset", assetId, proposalTimeStamp, amount, buyer, buyerSig, merchant)
+	if err != nil {
+		panic(fmt.Errorf("failed to submit transaction: %w", err))
+	}
+
+	fmt.Printf("*** Transaction committed successfully\n")
+}
+
+
+// Evaluate a transaction by assetID to query ledger state.
+func readAssetByID(contract *client.Contract) {
+	fmt.Printf("\n--> Evaluate Transaction: ReadAsset, function returns asset attributes\n")
+
+	evaluateResult, err := contract.EvaluateTransaction("ReadAsset", assetId)
+	if err != nil {
+		panic(fmt.Errorf("failed to evaluate transaction: %w", err))
+	}
+	result := formatJSON(evaluateResult)
+
+	fmt.Printf("*** Result:%s\n", result)
+}
+
+
+
+// Submit transaction, passing in the wrong number of arguments ,expected to throw an error containing details of any error responses from the smart contract.
+func exampleErrorHandling(contract *client.Contract) {
+	fmt.Println("\n--> Submit Transaction: UpdateAsset asset70, asset70 does not exist and should return an error")
+
+	_, err := contract.SubmitTransaction("UpdateAsset", "asset70", "blue", "5", "Tomoko", "300")
+	if err == nil {
+		panic("******** FAILED to return an error")
+	}
+
+	fmt.Println("*** Successfully caught the error:")
+
+	switch err := err.(type) {
+	case *client.EndorseError:
+		fmt.Printf("Endorse error for transaction %s with gRPC status %v: %s\n", err.TransactionID, status.Code(err), err)
+	case *client.SubmitError:
+		fmt.Printf("Submit error for transaction %s with gRPC status %v: %s\n", err.TransactionID, status.Code(err), err)
+	case *client.CommitStatusError:
+		if errors.Is(err, context.DeadlineExceeded) {
+			fmt.Printf("Timeout waiting for transaction %s commit status: %s", err.TransactionID, err)
+		} else {
+			fmt.Printf("Error obtaining commit status for transaction %s with gRPC status %v: %s\n", err.TransactionID, status.Code(err), err)
+		}
+	case *client.CommitError:
+		fmt.Printf("Transaction %s failed to commit with status %d: %s\n", err.TransactionID, int32(err.Code), err)
+	default:
+		panic(fmt.Errorf("unexpected error type %T: %w", err, err))
+	}
+
+	// Any error that originates from a peer or orderer node external to the gateway will have its details
+	// embedded within the gRPC status error. The following code shows how to extract that.
+	statusErr := status.Convert(err)
+
+	details := statusErr.Details()
+	if len(details) > 0 {
+		fmt.Println("Error Details:")
+
+		for _, detail := range details {
+			switch detail := detail.(type) {
+			case *gateway.ErrorDetail:
+				fmt.Printf("- address: %s, mspId: %s, message: %s\n", detail.Address, detail.MspId, detail.Message)
+			}
+		}
+	}
+}
+
+// Format JSON data
+func formatJSON(data []byte) string {
+	var prettyJSON bytes.Buffer
+	if err := json.Indent(&prettyJSON, data, "", "  "); err != nil {
+		panic(fmt.Errorf("failed to parse JSON: %w", err))
+	}
+	return prettyJSON.String()
+}
 
 ```
 
