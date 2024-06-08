@@ -352,3 +352,12 @@ root@ubuntu:/home/yezzi/Desktop/CBDC/fabric-samples/test-network/organizations/p
 ```
 
 Remember, what is configured in this file is the info of peer nodes organization
+
+run caliper:
+
+```
+npx caliper launch manager \
+    --caliper-workspace . \
+    --caliper-benchconfig caliper-bench-config.yaml \
+    --caliper-networkconfig networkConfig.yaml
+```
