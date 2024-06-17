@@ -53,8 +53,10 @@ func runPythonScript(script string) (string, error) {
 }
 
 func main() {
-	var transactionCount int
-	var totalLatency time.Duration
+	var (
+		initLedgerCount, getAllAssetsCount, createAssetCount, readAssetByIDCount, updateMerchantSigCount, updateAssetPaymentSuccessCount int
+		initLedgerLatency, getAllAssetsLatency, createAssetLatency, readAssetByIDLatency, updateMerchantSigLatency, updateAssetPaymentSuccessLatency time.Duration
+	)
 	startT := time.Now()
 
 	// 记录并输出 newGrpcConnection() 的时间
@@ -108,57 +110,57 @@ func main() {
 	initLedger(contract)
 	elapsed = time.Since(start)
 	fmt.Printf("initLedger took %v\n", elapsed)
-	totalLatency += elapsed
-	transactionCount++
+	initLedgerLatency += elapsed
+	initLedgerCount++
 
 	start = time.Now()
 	getAllAssets(contract)
 	elapsed = time.Since(start)
 	fmt.Printf("getAllAssets took %v\n", elapsed)
-	totalLatency += elapsed
-	transactionCount++
+	getAllAssetsLatency += elapsed
+	getAllAssetsCount++
 
 	start = time.Now()
 	createAsset(contract)
 	elapsed = time.Since(start)
 	fmt.Printf("createAsset took %v\n", elapsed)
-	totalLatency += elapsed
-	transactionCount++
+	createAssetLatency += elapsed
+	createAssetCount++
 
 	start = time.Now()
 	readAssetByID(contract)
 	elapsed = time.Since(start)
 	fmt.Printf("readAssetByID took %v\n", elapsed)
-	totalLatency += elapsed
-	transactionCount++
+	readAssetByIDLatency += elapsed
+	readAssetByIDCount++
 
 	start = time.Now()
 	updateMerchantSig(contract)
 	elapsed = time.Since(start)
 	fmt.Printf("updateMerchantSig took %v\n", elapsed)
-	totalLatency += elapsed
-	transactionCount++
+	updateMerchantSigLatency += elapsed
+	updateMerchantSigCount++
 
 	start = time.Now()
 	readAssetByID(contract)
 	elapsed = time.Since(start)
 	fmt.Printf("readAssetByID took %v\n", elapsed)
-	totalLatency += elapsed
-	transactionCount++
+	readAssetByIDLatency += elapsed
+	readAssetByIDCount++
 
 	start = time.Now()
 	updateAssetPaymentSuccess(contract)
 	elapsed = time.Since(start)
 	fmt.Printf("updateAssetPaymentSuccess took %v\n", elapsed)
-	totalLatency += elapsed
-	transactionCount++
+	updateAssetPaymentSuccessLatency += elapsed
+	updateAssetPaymentSuccessCount++
 
 	start = time.Now()
 	readAssetByID(contract)
 	elapsed = time.Since(start)
 	fmt.Printf("readAssetByID took %v\n", elapsed)
-	totalLatency += elapsed
-	transactionCount++
+	readAssetByIDLatency += elapsed
+	readAssetByIDCount++
 
 	// 记录并输出运行 Python 脚本的时间
 	start = time.Now()
@@ -175,15 +177,27 @@ func main() {
 	tc := time.Since(startT) // 计算总耗时
 	fmt.Printf("Total time cost = %v\n", tc)
 
-	// 计算并输出TPS和平均延迟
+	// 计算并输出每种交易类型的TPS和平均延迟
 	totalDuration := time.Since(startT)
-	tps := float64(transactionCount) / totalDuration.Seconds()
-	avgLatency := totalLatency / time.Duration(transactionCount)
-	fmt.Printf("Total Transactions: %d\n", transactionCount)
-	fmt.Printf("Total Time: %v\n", totalDuration)
-	fmt.Printf("TPS: %.2f\n", tps)
-	fmt.Printf("Average Latency: %v\n", avgLatency)
+
+	calculateAndPrintTPS := func(name string, count int, latency time.Duration) {
+		if count > 0 {
+			tps := float64(count) / totalDuration.Seconds()
+			avgLatency := latency / time.Duration(count)
+			fmt.Printf("%s - Transactions: %d, TPS: %.2f, Average Latency: %v\n", name, count, tps, avgLatency)
+		} else {
+			fmt.Printf("%s - No transactions\n", name)
+		}
+	}
+
+	calculateAndPrintTPS("initLedger", initLedgerCount, initLedgerLatency)
+	calculateAndPrintTPS("getAllAssets", getAllAssetsCount, getAllAssetsLatency)
+	calculateAndPrintTPS("createAsset", createAssetCount, createAssetLatency)
+	calculateAndPrintTPS("readAssetByID", readAssetByIDCount, readAssetByIDLatency)
+	calculateAndPrintTPS("updateMerchantSig", updateMerchantSigCount, updateMerchantSigLatency)
+	calculateAndPrintTPS("updateAssetPaymentSuccess", updateAssetPaymentSuccessCount, updateAssetPaymentSuccessLatency)
 }
+
 
 // newGrpcConnection creates a gRPC connection to the Gateway server.
 func newGrpcConnection() *grpc.ClientConn {
