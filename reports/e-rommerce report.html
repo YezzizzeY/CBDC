@@ -1,0 +1,470 @@
+<!doctype html>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+<script>
+    function plotChart(divId, chartData) {
+        // Convert from stringified html, to valid JSON
+        const chartDetails = JSON.parse(chartData.replace(/&quot;/g,'"'));
+        new Chart(document.getElementById(divId), {
+            type: chartDetails.type,
+            data: {
+                labels: chartDetails.labels,
+                datasets: chartDetails.datasets
+            },
+            options: {
+                legend: { display: chartDetails.legend },
+                title: {
+                    display: true,
+                    text: chartDetails.title
+                }
+            }
+        });
+    }
+</script>
+<html>
+<head>
+    <title>Hyperledger Caliper Report</title>
+    <meta charset="UTF-8"/>
+    <style type="text/css">
+        .left-column {
+            position: fixed;
+            width:20%;
+        }
+        .left-column ul {
+            display: block;
+            padding: 0;
+            list-style: none;
+            border-bottom: 1px solid #d9d9d9;
+            font-size: 14px;
+        }
+        .left-column h2{
+            font-size: 24px;
+            font-weight: 400;
+            margin-block-end: 0.5em;
+        }
+        .left-column h3{
+            font-size: 18px;
+            font-weight: 400;
+            margin-block-end: 0.5em;
+        }
+        .left-column li{
+            margin-left: 10px;
+            margin-bottom: 5px;
+            color: #5e6b73;
+        }
+        .right-column {
+            margin-left: 22%;
+            width:60%;
+        }
+        .right-column table {
+            font-size:11px;
+            color:#333333;
+            border-width: 1px;
+            border-color: #666666;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        .right-column h2{
+            font-weight: 400;
+        }
+        .right-column h3{
+            font-weight: 400;
+        }
+        .right-column h4 {
+            font-weight: 400;
+            margin-block-end: 0;
+        }
+        .right-column th {
+            border-width: 1px;
+            font-size: small;
+            padding: 8px;
+            border-style: solid;
+            border-color: #666666;
+            background-color: #f2f2f2;
+        }
+        .right-column td {
+            border-width: 1px;
+            font-size: small;
+            padding: 8px;
+            border-style: solid;
+            border-color: #666666;
+            background-color: #ffffff;
+            font-weight: 400;
+        }
+        .tag {
+            margin-bottom: 10px;
+            padding: 5px 10px;
+        }
+        pre {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #f2f2f2;
+            -webkit-border-radius: 5px;
+            -moz-border-radius: 5px;
+            -khtml-border-radius: 5px;
+            overflow:auto;
+            max-height:300px;
+            font-size:12px;
+        }
+        .charting {
+            display:flex;
+            flex-direction:row;
+            flex-wrap: wrap;
+            page-break-inside: auto;
+        }
+        .chart {
+            display:flex;
+            flex:1;
+            max-width: 50%;
+        }
+    </style>
+</head>
+<body style="font-family: IBM Plex Sans; font-weight: 200;">
+    <main>
+        <div class="left-column">
+            <img src="https://hyperledger.github.io/caliper/assets/img/hyperledger_caliper_logo_color.png" style="width:95%;" alt="">
+            <ul>
+                <h3>&nbspBasic information</h3>
+                <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
+                <li>Name: &nbsp<span style="font-weight: 500;">Fabric Network Test</span></li>
+                <li>Description: &nbsp<span style="font-weight: 500;">This is a simple test for a Fabric network</span></li>
+                <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">4</span></li>
+                <li><a href="#benchmarkInfo">Details</a></li>
+            </ul>
+            <ul>
+                <h3>&nbspBenchmark results</h3>
+                <li><a href="#benchmarksummary">Summary</a></li>
+                    <li><a href="#Transaction Proposal Creation">Transaction Proposal Creation</a></li>
+                    <li><a href="#Sign Proposal">Sign Proposal</a></li>
+                    <li><a href="#Proposal Confirmation">Proposal Confirmation</a></li>
+                    <li><a href="#Entire proceeding">Entire proceeding</a></li>
+            </ul>
+            <ul>
+                <h3>&nbspSystem under test</h3>
+                <li><a href="#sutdetails">Details</a></li>
+            </ul>
+        </div>
+
+        <div class="right-column">
+            <h1 style="padding-top: 3em; font-weight: 500;">Caliper report</h1>
+            <div style="border-bottom: 1px solid #d9d9d9; margin-bottom: 10px;" id="benchmarksummary">
+                <table style="min-width: 100%;">
+                    <h3>Summary of performance metrics</h3>
+                    <tr>
+                         <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                    </tr>
+
+                    <tr>
+                         <td>Transaction Proposal Creation</td> <td>0</td> <td>50000</td> <td>389.5</td> <td>-</td> <td>-</td> <td>-</td> <td>389.5</td>
+                    </tr>
+                    <tr>
+                         <td>Sign Proposal</td> <td>24092</td> <td>25908</td> <td>252.2</td> <td>6.05</td> <td>0.05</td> <td>1.54</td> <td>249.7</td>
+                    </tr>
+                    <tr>
+                         <td>Proposal Confirmation</td> <td>18742</td> <td>31258</td> <td>271.0</td> <td>8.10</td> <td>0.04</td> <td>2.47</td> <td>268.0</td>
+                    </tr>
+                    <tr>
+                         <td>Entire proceeding</td> <td>16132</td> <td>34082</td> <td>324.0</td> <td>2.80</td> <td>0.04</td> <td>0.89</td> <td>319.8</td>
+                    </tr>
+                </table>
+            </div>
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="Transaction Proposal Creation">
+                <h2>Benchmark round: Transaction Proposal Creation</h2>
+                <p>Test the creation</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
+  type: fixed-rate
+  opts:
+    tps: 3000
+</pre>
+                        <h3>Performance metrics for Transaction Proposal Creation</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>Transaction Proposal Creation</td> <td>0</td> <td>50000</td> <td>389.5</td> <td>-</td> <td>-</td> <td>-</td> <td>389.5</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for Transaction Proposal Creation</h3>
+                            <h4>Resource monitor: docker</h4>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                <table>
+                                    <tr>
+                                         <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [B]</th> <th>Disc Read [KB]</th>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;dev-peer0.org2.example.com-testgo_1.0.1-649a89d66a8a6f4533aade62445a20a3f7a7889ae85d48a382c1a8dec2055597</td> <td>26.81</td> <td>22.99</td> <td>9.46</td> <td>8.87</td> <td>109</td> <td>30.3</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;dev-peer0.org1.example.com-testgo_1.0.1-649a89d66a8a6f4533aade62445a20a3f7a7889ae85d48a382c1a8dec2055597</td> <td>27.44</td> <td>23.2</td> <td>9.46</td> <td>8.97</td> <td>109</td> <td>30.3</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;cli</td> <td>0</td> <td>0</td> <td>13.5</td> <td>13.5</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;peer0.org1.example.com</td> <td>54.38</td> <td>44.79</td> <td>176</td> <td>163</td> <td>110</td> <td>139</td> <td>0.00</td> <td>28.0</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;peer0.org2.example.com</td> <td>53.58</td> <td>45.11</td> <td>114</td> <td>103</td> <td>109</td> <td>138</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;orderer.example.com</td> <td>0.18</td> <td>0.04</td> <td>88.6</td> <td>88.6</td> <td>0.0264</td> <td>0.0297</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;ca_org1</td> <td>0.01</td> <td>0</td> <td>8.98</td> <td>8.98</td> <td>0.0000668</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;ca_orderer</td> <td>0.01</td> <td>0</td> <td>9.16</td> <td>9.16</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;ca_org2</td> <td>0.01</td> <td>0</td> <td>8.94</td> <td>8.94</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;opencbdc-tx_sentinel0_1</td> <td>1.36</td> <td>0.02</td> <td>5.36</td> <td>5.36</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                </table>
+                                </tr>
+                            </table>
+                            <div class="charting">
+                            </div>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="Sign Proposal">
+                <h2>Benchmark round: Sign Proposal</h2>
+                <p>Test the signing process of transaction proposal</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
+  type: fixed-rate
+  opts:
+    tps: 3000
+</pre>
+                        <h3>Performance metrics for Sign Proposal</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>Sign Proposal</td> <td>24092</td> <td>25908</td> <td>252.2</td> <td>6.05</td> <td>0.05</td> <td>1.54</td> <td>249.7</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for Sign Proposal</h3>
+                            <h4>Resource monitor: docker</h4>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                <table>
+                                    <tr>
+                                         <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [MB]</th> <th>Disc Read [KB]</th>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;dev-peer0.org2.example.com-testgo_1.0.1-649a89d66a8a6f4533aade62445a20a3f7a7889ae85d48a382c1a8dec2055597</td> <td>18.17</td> <td>11.67</td> <td>11.1</td> <td>9.35</td> <td>107</td> <td>44.6</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;dev-peer0.org1.example.com-testgo_1.0.1-649a89d66a8a6f4533aade62445a20a3f7a7889ae85d48a382c1a8dec2055597</td> <td>13.46</td> <td>10.48</td> <td>11.9</td> <td>9.60</td> <td>104</td> <td>42.3</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;cli</td> <td>0</td> <td>0</td> <td>13.5</td> <td>13.5</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;peer0.org1.example.com</td> <td>91.29</td> <td>61.77</td> <td>433</td> <td>328</td> <td>299</td> <td>223</td> <td>262</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;peer0.org2.example.com</td> <td>71.58</td> <td>53.91</td> <td>191</td> <td>154</td> <td>300</td> <td>198</td> <td>262</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;orderer.example.com</td> <td>35.15</td> <td>18.78</td> <td>304</td> <td>202</td> <td>182</td> <td>361</td> <td>385</td> <td>120</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;ca_org1</td> <td>0</td> <td>0</td> <td>8.98</td> <td>8.98</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;ca_orderer</td> <td>0</td> <td>0</td> <td>9.16</td> <td>9.16</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;ca_org2</td> <td>0</td> <td>0</td> <td>8.94</td> <td>8.94</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;opencbdc-tx_sentinel0_1</td> <td>4.54</td> <td>0.08</td> <td>6.51</td> <td>5.37</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                </table>
+                                </tr>
+                            </table>
+                            <div class="charting">
+                            </div>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="Proposal Confirmation">
+                <h2>Benchmark round: Proposal Confirmation</h2>
+                <p>Test the payment finalization precess</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
+  type: fixed-rate
+  opts:
+    tps: 3000
+</pre>
+                        <h3>Performance metrics for Proposal Confirmation</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>Proposal Confirmation</td> <td>18742</td> <td>31258</td> <td>271.0</td> <td>8.10</td> <td>0.04</td> <td>2.47</td> <td>268.0</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for Proposal Confirmation</h3>
+                            <h4>Resource monitor: docker</h4>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                <table>
+                                    <tr>
+                                         <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [MB]</th> <th>Disc Read [B]</th>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;dev-peer0.org2.example.com-testgo_1.0.1-649a89d66a8a6f4533aade62445a20a3f7a7889ae85d48a382c1a8dec2055597</td> <td>18.1</td> <td>12.3</td> <td>10.5</td> <td>9.44</td> <td>106</td> <td>44.3</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;dev-peer0.org1.example.com-testgo_1.0.1-649a89d66a8a6f4533aade62445a20a3f7a7889ae85d48a382c1a8dec2055597</td> <td>14.38</td> <td>10.6</td> <td>12.6</td> <td>10.0</td> <td>103</td> <td>41.0</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;cli</td> <td>0</td> <td>0</td> <td>13.5</td> <td>13.5</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;peer0.org1.example.com</td> <td>84.25</td> <td>62.04</td> <td>625</td> <td>530</td> <td>273</td> <td>217</td> <td>227</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;peer0.org2.example.com</td> <td>66.23</td> <td>54.71</td> <td>218</td> <td>188</td> <td>275</td> <td>196</td> <td>227</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;orderer.example.com</td> <td>43.45</td> <td>17.17</td> <td>455</td> <td>370</td> <td>157</td> <td>311</td> <td>333</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;ca_org1</td> <td>0.14</td> <td>0</td> <td>8.98</td> <td>8.98</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;ca_orderer</td> <td>0.18</td> <td>0</td> <td>9.16</td> <td>9.16</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;ca_org2</td> <td>0.16</td> <td>0</td> <td>8.94</td> <td>8.94</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;opencbdc-tx_sentinel0_1</td> <td>1.8</td> <td>0.04</td> <td>7.15</td> <td>5.38</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                </table>
+                                </tr>
+                            </table>
+                            <div class="charting">
+                            </div>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="Entire proceeding">
+                <h2>Benchmark round: Entire proceeding</h2>
+                <p>Test a round of sequential processing all stages</p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
+  type: fixed-rate
+  opts:
+    tps: 3000
+</pre>
+                        <h3>Performance metrics for Entire proceeding</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>Entire proceeding</td> <td>16132</td> <td>34082</td> <td>324.0</td> <td>2.80</td> <td>0.04</td> <td>0.89</td> <td>319.8</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for Entire proceeding</h3>
+                            <h4>Resource monitor: docker</h4>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                <table>
+                                    <tr>
+                                         <th>Name</th> <th>CPU%(max)</th> <th>CPU%(avg)</th> <th>Memory(max) [MB]</th> <th>Memory(avg) [MB]</th> <th>Traffic In [MB]</th> <th>Traffic Out [MB]</th> <th>Disc Write [MB]</th> <th>Disc Read [KB]</th>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;dev-peer0.org2.example.com-testgo_1.0.1-649a89d66a8a6f4533aade62445a20a3f7a7889ae85d48a382c1a8dec2055597</td> <td>16.33</td> <td>12.14</td> <td>10.3</td> <td>9.48</td> <td>103</td> <td>34.3</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;dev-peer0.org1.example.com-testgo_1.0.1-649a89d66a8a6f4533aade62445a20a3f7a7889ae85d48a382c1a8dec2055597</td> <td>16.73</td> <td>11.73</td> <td>12.1</td> <td>9.92</td> <td>102</td> <td>33.3</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;cli</td> <td>0</td> <td>0</td> <td>13.5</td> <td>13.5</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;peer0.org1.example.com</td> <td>84.84</td> <td>63.74</td> <td>793</td> <td>695</td> <td>242</td> <td>188</td> <td>198</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;peer0.org2.example.com</td> <td>69.13</td> <td>54.67</td> <td>236</td> <td>211</td> <td>241</td> <td>168</td> <td>198</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;orderer.example.com</td> <td>20.63</td> <td>15.51</td> <td>590</td> <td>513</td> <td>137</td> <td>272</td> <td>292</td> <td>8.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;ca_org1</td> <td>0</td> <td>0</td> <td>8.99</td> <td>8.99</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;ca_orderer</td> <td>0</td> <td>0</td> <td>10.2</td> <td>9.36</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;ca_org2</td> <td>0</td> <td>0</td> <td>8.94</td> <td>8.94</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                    <tr>
+                                         <td>&#x2F;opencbdc-tx_sentinel0_1</td> <td>2.55</td> <td>0.06</td> <td>7.55</td> <td>5.39</td> <td>0.00</td> <td>0.00</td> <td>0.00</td> <td>0.00</td>
+                                    </tr>
+                                </table>
+                                </tr>
+                            </table>
+                            <div class="charting">
+                            </div>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;">
+                <h2>Test Environment</h2>
+                <h3>benchmark config</h3>
+                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: Fabric Network Test
+description: This is a simple test for a Fabric network
+workers:
+  number: 10
+rounds:
+  - label: Transaction Proposal Creation
+    description: Test the creation
+    txNumber: 50000
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 3000
+    workload:
+      module: .&#x2F;workload1.js
+  - label: Sign Proposal
+    description: Test the signing process of transaction proposal
+    txNumber: 50000
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 3000
+    workload:
+      module: .&#x2F;workload2.js
+  - label: Proposal Confirmation
+    description: Test the payment finalization precess
+    txNumber: 50000
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 3000
+    workload:
+      module: .&#x2F;workload3.js
+  - label: Entire proceeding
+    description: Test a round of sequential processing all stages
+    txNumber: 50000
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 3000
+    workload:
+      module: .&#x2F;workload4.js
+</pre>
+                <h3>SUT</h3>
+                <pre id="sutdetails">not provided</pre>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
